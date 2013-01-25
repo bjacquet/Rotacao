@@ -20,7 +20,7 @@
 from datetime import datetime        
 
 
-__timekeeper__ = datetime(2011, 9, 18)
+__timekeeper__ = datetime(2013, 1, 25)
 
 
 class Rotacao:

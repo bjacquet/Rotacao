@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2011 by Bruno Jacquet (bruno.jacquet@gmail.com)
+# Copyright (C) 2011-2017 by Bruno Jacquet (bruno.jacquet@gmail.com)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,31 +17,40 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-from datetime import datetime        
+from datetime import date       
+from dateutil.relativedelta import relativedelta
+from csv import reader
 
+__ficheiro__ = 'dados/rotacao.csv'
 
-__timekeeper__ = datetime(2013, 1, 25)
+def le_dados(ficheiro=__ficheiro__):
+    rotacao = []
+    with open(ficheiro) as dados:
+        leitor = reader(dados, delimiter=',')
+        for linha in leitor:
+            rotacao.append(linha)
+    return rotacao[1:]
 
+def actual (rotacao):
+    return rotacao[:4]
 
-class Rotacao:
-    def __init__ (self):
-        self.rotacao = []
-        self.ultima_actualizacao = 0
+def actualiza (rotacao, ultima_actualizacao):
+    if ultima_actualizacao.month == date.today().month and \
+       ultima_actualizacao.year == date.today().year:
+        return ultima_actualizacao
+    for i in range(4):
+        rotacao.append(rotacao.pop(0))
+    ultima_actualizacao += relativedelta(months=1)
+    return actualiza(rotacao, ultima_actualizacao)
 
-    def actual (self):
-        return self.rotacao[:4]
+def adiciona (rotacao, colaborador, mes=0):
+    rotacao.append(colaborador)
+    return rotacao
 
-    def actualiza (self):
-        if self.ultima_actualizacao != __timekeeper__.today.month:
-            for i in range(4):
-                self.rotacao = self.rotacao.append(self.rotacao.pop(0))
-            self.ultima_actualizacao = __timekeeper__.today().month
-        return self.rotacao
+def remove (rotacao, colaborador, mes=0):
+    rotacao.remove(colaborador)
+    return rotacao
 
-    def adiciona (self, colaborador, mes=0):
-        self.rotacao.append(colaborador)
-        return self.rotacao
-
-    def remove (self, colaborador, mes=0):
-        self.rotacao.remove(colaborador)
-        return self.rotacao
+if __name__ == "__main__":
+    rotacao = le_dados()
+    ultima_actualizacao = date(2017, 9, 25)

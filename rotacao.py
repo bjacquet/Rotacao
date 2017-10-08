@@ -21,36 +21,76 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 from csv import reader
 
-__ficheiro__ = 'dados/rotacao.csv'
 
-def le_dados(ficheiro=__ficheiro__):
-    rotacao = []
-    with open(ficheiro) as dados:
-        leitor = reader(dados, delimiter=',')
+__rotacao__ = 'dados/rotacao.csv'
+__lugares__ = 'dados/lugares.csv'
+
+
+def le_dados (ficheiro, parser):
+    dados = []
+    with open(ficheiro) as fd:
+        leitor = reader(fd, delimiter=',')
+        leitor.__next__()
         for linha in leitor:
-            rotacao.append(linha)
-    return rotacao[1:]
+            dados.append(parser(linha))
+    return dados
 
-def actual (rotacao):
-    return rotacao[:4]
+def leitor_data (data):
+    if data.isdigit():
+        return date.fromordinal(int(data))
+    else:
+        return None
 
-def actualiza (rotacao, ultima_actualizacao):
+def leitor_pessoa (pessoa):
+    nome  = pessoa[0]
+    entrada = leitor_data(pessoa[1])
+    saida   = leitor_data(pessoa[2])
+    return [nome, entrada, saida]
+
+def le_rotacao ():
+    return le_dados(__rotacao__, leitor_pessoa)
+
+def pessoa_entrada (pessoa):
+    return pessoa[1] or 0
+
+def leitor_lugar (lugar):
+    return lugar[:2]
+
+def le_lugares():
+    return le_dados(__lugares__, leitor_lugar)
+
+def num_lugares(lugares):
+    return len(lugares)
+
+def actual (rotacao, lugares):
+    return rotacao[:num_lugares(lugares)]
+
+def actualiza (rotacao, lugares, ultima_actualizacao):
     if ultima_actualizacao.month == date.today().month and \
        ultima_actualizacao.year == date.today().year:
         return ultima_actualizacao
-    for i in range(4):
+    for i in range(num_lugares(lugares)):
         rotacao.append(rotacao.pop(0))
     ultima_actualizacao += relativedelta(months=1)
-    return actualiza(rotacao, ultima_actualizacao)
+    rotacao = priotiriza(rotacao, ultima_actualizacao)
+    return actualiza(rotacao, lugares, ultima_actualizacao)
 
 def adiciona (rotacao, colaborador, mes=0):
     rotacao.append(colaborador)
     return rotacao
 
+def priotiriza (rotacao, hoje=date.today()):
+    """Estabelece a ordem na lista de rotação."""
+    frente, mantem, tras = [], [], []
+    for pessoa in rotacao:
+        if pessoa[1] == None:
+            mantem.append(pessoa)
+        elif pessoa[1].month == hoje.month and pessoa[1].year == hoje.year:
+            frente.append(pessoa)
+        else:
+            tras.append(pessoa)
+    return frente + mantem + tras
+
 def remove (rotacao, colaborador, mes=0):
     rotacao.remove(colaborador)
     return rotacao
-
-if __name__ == "__main__":
-    rotacao = le_dados()
-    ultima_actualizacao = date(2017, 9, 25)
